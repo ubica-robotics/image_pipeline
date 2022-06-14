@@ -198,7 +198,8 @@ def _get_circles(img, board, pattern):
     if pattern == Patterns.ACircles:
         flag = cv2.CALIB_CB_ASYMMETRIC_GRID
     mono_arr = numpy.array(mono)
-    (ok, corners) = cv2.findCirclesGrid(mono_arr, (board.n_cols, board.n_rows), flags=flag)
+    blobDetector = _create_blob_detector(h, w)
+    (ok, corners) = cv2.findCirclesGrid(mono_arr, (board.n_cols, board.n_rows), flags=flag, blobDetector=blobDetector)
 
     # In symmetric case, findCirclesGrid does not detect the target if it's turned sideways. So we try
     # again with dimensions swapped - not so efficient.
@@ -207,7 +208,37 @@ def _get_circles(img, board, pattern):
         (ok, corners) = cv2.findCirclesGrid(mono_arr, (board.n_rows, board.n_cols), flags=flag)
 
     return (ok, corners)
+def _create_blob_detector(h, w):
+    # Setup SimpleBlobDetector parameters.
+    blobParams = cv2.SimpleBlobDetector_Params()
 
+    # Change thresholds
+    blobParams.minThreshold = 8
+    blobParams.maxThreshold = 255
+
+    # Filter by Area.
+    blobParams.filterByArea = True
+    blobParams.minArea = 64     # minArea may be adjusted to suit for your experiment
+    blobParams.maxArea = h*w   # maxArea may be adjusted to suit for your experiment
+
+    # Filter by Circularity
+    # blobParams.filterByCircularity = True
+    # blobParams.minCircularity = 0.1
+
+    # Filter by Convexity
+    # blobParams.filterByConvexity = True
+    # blobParams.minConvexity = 0.87
+
+    # Filter by Inertia
+    # blobParams.filterByInertia = True
+    # blobParams.minInertiaRatio = 0.01
+
+    # Create a detector with the parameters
+    blobDetector = cv2.SimpleBlobDetector_create(blobParams)
+    
+    # print("minArea: {}, maxArea: {}".format(blobParams.minArea, blobParams.maxArea))
+    
+    return blobDetector
 
 # TODO self.size needs to come from CameraInfo, full resolution
 class Calibrator():
