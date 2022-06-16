@@ -83,6 +83,8 @@ def main():
                      help="number of radial distortion coefficients to use (up to 6, default %default)")
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
+    group.add_option("--ros-args", action='store_true', default=False,
+                     help="dummy ros args")
     parser.add_option_group(group)
     options, args = parser.parse_args()
 
