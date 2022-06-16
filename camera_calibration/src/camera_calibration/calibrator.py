@@ -33,6 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from io import BytesIO
+import os
 import cv2
 import cv_bridge
 import image_geometry
@@ -248,7 +249,7 @@ class Calibrator():
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK):
+    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, save_path="/tmp"):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -277,6 +278,7 @@ class Calibrator():
         self.goodenough = False
         self.param_ranges = [0.7, 0.7, 0.4, 0.5]
         self.name = name
+        self.save_path=save_path
 
     def mkgray(self, msg):
         """
@@ -540,6 +542,9 @@ class Calibrator():
 
     def do_save(self):
         filename = '/tmp/calibrationdata.tar.gz'
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+        filename = os.path.join(self.save_path, self.name+'.tar.gz')
         tf = tarfile.open(filename, 'w:gz')
         self.do_tarfile_save(tf) # Must be overridden in subclasses
         tf.close()

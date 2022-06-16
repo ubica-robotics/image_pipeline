@@ -77,7 +77,7 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode(Node):
     def __init__(self, name, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0):
+                 pattern=Patterns.Chessboard, camera_name='', save_path="/tmp", checkerboard_flags = 0):
         super().__init__(name)
 
         self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
@@ -107,6 +107,7 @@ class CalibrationNode(Node):
         self._checkerboard_flags = checkerboard_flags
         self._pattern = pattern
         self._camera_name = camera_name
+        self._save_path = save_path
         lsub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'left')
         rsub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'right')
         ts = synchronizer([lsub, rsub], 4)
@@ -143,10 +144,10 @@ class CalibrationNode(Node):
         if self.c == None:
             if self._camera_name:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                        checkerboard_flags=self._checkerboard_flags)
+                                        checkerboard_flags=self._checkerboard_flags, save_path=self._save_path)
             else:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                        checkerboard_flags=self.checkerboard_flags)
+                                        checkerboard_flags=self.checkerboard_flags, save_path=self._save_path)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)

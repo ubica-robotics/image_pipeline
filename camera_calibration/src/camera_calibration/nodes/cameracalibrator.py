@@ -59,6 +59,9 @@ def main():
     group.add_option("-q", "--square",
                      action="append", default=[],
                      help="chessboard square size in meters")
+    group.add_option("--save_path",
+                     type="string", default="package_share/calibrations",
+                     help="path to save the calibration files")
     parser.add_option_group(group)
     group = OptionGroup(parser, "ROS Communication Options")
     group.add_option("--approximate",
@@ -141,7 +144,7 @@ def main():
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
     rclpy.init(args=args)
-    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
+    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name, options.save_path,
                                  checkerboard_flags=checkerboard_flags)
     node.spin()
 
