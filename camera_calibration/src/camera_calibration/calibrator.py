@@ -221,19 +221,19 @@ def _create_blob_detector(h, w):
     blobParams.minArea = 64     # minArea may be adjusted to suit for your experiment
     blobParams.maxArea = h*w   # maxArea may be adjusted to suit for your experiment
     
-    blobParams.minDistBetweenBlobs = 1.0
+    # blobParams.minDistBetweenBlobs = 1.0
 
     # Filter by Circularity
-    # blobParams.filterByCircularity = True
-    # blobParams.minCircularity = 0.1
+    blobParams.filterByCircularity = True
+    blobParams.minCircularity = 0.1
 
     # Filter by Convexity
-    # blobParams.filterByConvexity = True
-    # blobParams.minConvexity = 0.87
+    blobParams.filterByConvexity = True
+    blobParams.minConvexity = 0.87
 
     # Filter by Inertia
-    # blobParams.filterByInertia = True
-    # blobParams.minInertiaRatio = 0.01
+    blobParams.filterByInertia = True
+    blobParams.minInertiaRatio = 0.01
 
     # Create a detector with the parameters
     blobDetector = cv2.SimpleBlobDetector_create(blobParams)
