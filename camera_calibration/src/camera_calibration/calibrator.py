@@ -249,7 +249,7 @@ class Calibrator():
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, save_path="/tmp"):
+    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, save_path="/tmp", scale_factor = 1.0):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -279,6 +279,7 @@ class Calibrator():
         self.param_ranges = [0.7, 0.7, 0.4, 0.5]
         self.name = name
         self.save_path=save_path
+        self.scale_factor = scale_factor
 
     def mkgray(self, msg):
         """
@@ -445,7 +446,7 @@ class Calibrator():
                     corners = downsampled_corners
         else:
             # Circle grid detection is fast even on large images
-            scale_factor = 2.0
+            scale_factor = self.scale_factor
             img = cv2.resize(img, (int(width / scale_factor), int(height / scale_factor)))
 
             (ok, corners, board) = self.get_corners(img)

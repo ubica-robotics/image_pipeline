@@ -62,6 +62,9 @@ def main():
     group.add_option("--save_path",
                      type="string", default="package_share/calibrations",
                      help="path to save the calibration files")
+    group.add_option("--scale_factor",
+                     type="float", default=1.0,
+                     help="Scale factor to downscale the images")
     parser.add_option_group(group)
     group = OptionGroup(parser, "ROS Communication Options")
     group.add_option("--approximate",
@@ -144,7 +147,7 @@ def main():
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
     rclpy.init(args=args)
-    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name, options.save_path,
+    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name, options.save_path, options.scale_factor,
                                  checkerboard_flags=checkerboard_flags)
     node.spin()
 
