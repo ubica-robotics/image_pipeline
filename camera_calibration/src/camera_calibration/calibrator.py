@@ -445,10 +445,14 @@ class Calibrator():
                     corners = downsampled_corners
         else:
             # Circle grid detection is fast even on large images
+            scale_factor = 2.0
+            img = cv2.resize(img, (int(width / scale_factor), int(height / scale_factor)))
             (ok, corners, board) = self.get_corners(img)
             # Scale corners to downsampled image for display
             downsampled_corners = None
             if ok:
+                corners[:,:,0] *= scale_factor
+                corners[:,:,1] *= scale_factor
                 if scale > 1.0:
                     downsampled_corners = corners.copy()
                     downsampled_corners[:,:,0] /= x_scale
