@@ -553,6 +553,9 @@ class Calibrator():
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
         filename = os.path.join(self.save_path, self.name+'.tar.gz')
+        yaml_filename = os.path.join(self.save_path, self.name+'.yaml')
+        print("=====")
+        print(self.yaml(()))
         tf = tarfile.open(filename, 'w:gz')
         self.do_tarfile_save(tf) # Must be overridden in subclasses
         tf.close()
