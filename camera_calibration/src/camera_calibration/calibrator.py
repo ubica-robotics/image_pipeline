@@ -557,7 +557,7 @@ class Calibrator():
         filename = os.path.join(self.save_path, self.name+'.tar.gz')
         yaml_filename = os.path.join(self.save_path, self.name+'.yaml')
         print("=====")
-        print(self.yaml(()))
+        print(self.yaml())
         with open(yaml_filename, 'w') as outfile:
             yaml.dump(self.yaml(), outfile, default_flow_style=False)
         tf = tarfile.open(filename, 'w:gz')
