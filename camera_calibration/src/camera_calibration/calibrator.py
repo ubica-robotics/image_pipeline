@@ -46,6 +46,8 @@ import tarfile
 import time
 from distutils.version import LooseVersion
 
+import yaml
+
 
 # Supported calibration patterns
 class Patterns:
@@ -556,6 +558,8 @@ class Calibrator():
         yaml_filename = os.path.join(self.save_path, self.name+'.yaml')
         print("=====")
         print(self.yaml(()))
+        with open(yaml_filename, 'w') as outfile:
+            yaml.dump(self.yaml(), outfile, default_flow_style=False)
         tf = tarfile.open(filename, 'w:gz')
         self.do_tarfile_save(tf) # Must be overridden in subclasses
         tf.close()
@@ -857,8 +861,8 @@ class MonoCalibrator(Calibrator):
         ims = [("left-%04d.png" % i, im) for i,(_, im) in enumerate(self.db)]
         for (name, im) in ims:
             taradd(name, cv2.imencode(".png", im)[1].tostring())
-        taradd('ost.yaml', self.yaml())
-        taradd('ost.txt', self.ost())
+        taradd(self.name+'.yaml', self.yaml())
+        taradd(self.name+'.txt', self.ost())
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
