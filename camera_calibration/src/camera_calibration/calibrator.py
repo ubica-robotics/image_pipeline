@@ -559,7 +559,8 @@ class Calibrator():
         print("=====")
         print(self.yaml())
         with open(yaml_filename, 'w') as outfile:
-            yaml.dump(self.yaml(), outfile, default_flow_style=False)
+            outfile.write(self.yaml())
+            # yaml.dump(self.yaml(), outfile, default_flow_style=False)
         tf = tarfile.open(filename, 'w:gz')
         self.do_tarfile_save(tf) # Must be overridden in subclasses
         tf.close()
