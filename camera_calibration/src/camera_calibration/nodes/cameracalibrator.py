@@ -31,12 +31,13 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+import os.path
 
 import cv2
 import functools
 import message_filters
 import rclpy
-from camera_calibration.camera_calibrator import OpenCVCalibrationNode
+from camera_calibration.camera_calibrator import OpenCVCalibrationNode, TarCalibrationNode
 from camera_calibration.calibrator import ChessboardInfo, Patterns
 from message_filters import ApproximateTimeSynchronizer
 
@@ -46,8 +47,8 @@ def main():
     parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]",
                           description=None)
     parser.add_option("-c", "--camera_name",
-                     type="string", default='narrow_stereo',
-                     help="name of the camera to appear in the calibration file")
+                      type="string", default='narrow_stereo',
+                      help="name of the camera to appear in the calibration file")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -89,6 +90,9 @@ def main():
                      help="number of radial distortion coefficients to use (up to 6, default %default)")
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
+    group.add_option("--tar_calibration", action='store_true', default=False,
+                     help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
+    group.add_option("--tar_file_path", type=str, help="Path to the tar file of the images for camera")
     parser.add_option_group(group)
     options, args = parser.parse_args()
 
@@ -147,13 +151,29 @@ def main():
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
     rclpy.init(args=args)
-    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name, options.save_path, options.scale_factor,
-                                 checkerboard_flags=checkerboard_flags)
-    node.spin()
+    if not options.tar_calibration:
+        node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern,
+                                     options.camera_name, options.save_path, options.scale_factor,
+                                     checkerboard_flags=checkerboard_flags)
+        node.spin()
+    else:
+        if not os.path.exists(options.tar_file_path):
+            raise RuntimeError(f"Given tar file path does not exists: {options.tar_file_path}")
+        else:
+            if options.camera_name is None or options.camera_name == "None":
+                root_folder, tar_file_name = os.path.split(os.path.normpath(options.tar_file_path))
+                options.camera_name = tar_file_name.split('.')[0]
+                print("Camera Name: ", options.camera_name)
+            node = TarCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
+                                      options.save_path, options.scale_factor,
+                                      checkerboard_flags=checkerboard_flags)
+            node.calibrate_from_tar(options.tar_file_path)
+
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         import traceback
+
         traceback.print_exc()

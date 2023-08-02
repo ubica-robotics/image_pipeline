@@ -48,6 +48,7 @@ from message_filters import ApproximateTimeSynchronizer
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 
+
 class SpinThread(threading.Thread):
     """
     Thread that spins the ros node, while imshow runs in the main thread
@@ -59,7 +60,7 @@ class SpinThread(threading.Thread):
 
     def run(self):
         rclpy.spin(self.node)
-        
+
 
 class ConsumerThread(threading.Thread):
     def __init__(self, queue, function):
@@ -76,8 +77,8 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode(Node):
-    def __init__(self, name, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', save_path="/tmp", scale_factor=1.0, checkerboard_flags = 0):
+    def __init__(self, name, boards, service_check=True, synchronizer=message_filters.TimeSynchronizer, flags=0,
+                 pattern=Patterns.Chessboard, camera_name='', save_path="/tmp", scale_factor=1.0, checkerboard_flags=0):
         super().__init__(name)
 
         self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
@@ -89,10 +90,11 @@ class CalibrationNode(Node):
 
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
-            for cli in [self.set_camera_info_service, self.set_left_camera_info_service, self.set_right_camera_info_service]:
-                #remapped = rclpy.remap_name(svcname)
-                #if remapped != svcname:
-                #fullservicename = "%s/set_camera_info" % remapped
+            for cli in [self.set_camera_info_service, self.set_left_camera_info_service,
+                        self.set_right_camera_info_service]:
+                # remapped = rclpy.remap_name(svcname)
+                # if remapped != svcname:
+                # fullservicename = "%s/set_camera_info" % remapped
                 print("Waiting for service", cli.srv_name, "...")
                 # check all services so they are ready.
                 try:
@@ -109,6 +111,7 @@ class CalibrationNode(Node):
         self._camera_name = camera_name
         self._save_path = save_path
         self.scale_factor = scale_factor
+        print("SAVE PATH: ", self._save_path)
         lsub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'left')
         rsub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'right')
         ts = synchronizer([lsub, rsub], 4)
@@ -132,6 +135,7 @@ class CalibrationNode(Node):
 
     def redraw_stereo(self, *args):
         pass
+
     def redraw_monocular(self, *args):
         pass
 
@@ -145,10 +149,12 @@ class CalibrationNode(Node):
         if self.c == None:
             if self._camera_name:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                        checkerboard_flags=self._checkerboard_flags, save_path=self._save_path, scale_factor = self.scale_factor)
+                                        checkerboard_flags=self._checkerboard_flags, save_path=self._save_path,
+                                        scale_factor=self.scale_factor)
             else:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                        checkerboard_flags=self.checkerboard_flags, save_path=self._save_path, scale_factor = self.scale_factor)
+                                        checkerboard_flags=self.checkerboard_flags, save_path=self._save_path,
+                                        scale_factor=self.scale_factor)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -168,7 +174,6 @@ class CalibrationNode(Node):
         self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
         self.redraw_stereo(drawable)
 
-
     def check_set_camera_info(self, response):
         if response.done():
             if response.result() is not None:
@@ -178,12 +183,14 @@ class CalibrationNode(Node):
         for i in range(10):
             print("!" * 80)
         print()
-        print("Attempt to set camera info failed: " + response.result() if response.result() is not None else "Not available")
+        print(
+            "Attempt to set camera info failed: " + response.result() if response.result() is not None else "Not available")
         print()
         for i in range(10):
             print("!" * 80)
         print()
-        self.get_logger().error('Unable to set camera info for calibration. Failure message: %s' % response.result() if response.result() is not None else "Not available")
+        self.get_logger().error(
+            'Unable to set camera info for calibration. Failure message: %s' % response.result() if response.result() is not None else "Not available")
         return False
 
     def do_upload(self):
@@ -243,8 +250,8 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv2.createTrackbar("scale", "display", 0, 100, self.on_scale)
 
     @classmethod
-    def putText(cls, img, text, org, color = (0,0,0)):
-        cv2.putText(img, text, org, cls.FONT_FACE, cls.FONT_SCALE, color, thickness = cls.FONT_THICKNESS)
+    def putText(cls, img, text, org, color=(0, 0, 0)):
+        cv2.putText(img, text, org, cls.FONT_FACE, cls.FONT_SCALE, color, thickness=cls.FONT_THICKNESS)
 
     @classmethod
     def getTextSize(cls, text):
@@ -276,13 +283,13 @@ class OpenCVCalibrationNode(CalibrationNode):
             color = (224, 224, 224)
         cv2.circle(dst, (size[0] // 2, size[1] // 2), min(size) // 2, color, -1)
         (w, h) = self.getTextSize(label)
-        self.putText(dst, label, ((size[0] - w) // 2, (size[1] + h) // 2), (255,255,255))
+        self.putText(dst, label, ((size[0] - w) // 2, (size[1] + h) // 2), (255, 255, 255))
 
     def buttons(self, display):
         x = self.displaywidth
-        self.button(display[180:280,x:x+100], "CALIBRATE", self.c.goodenough)
-        self.button(display[280:380,x:x+100], "SAVE", self.c.calibrated)
-        self.button(display[380:480,x:x+100], "COMMIT", self.c.calibrated)
+        self.button(display[180:280, x:x + 100], "CALIBRATE", self.c.goodenough)
+        self.button(display[280:380, x:x + 100], "SAVE", self.c.calibrated)
+        self.button(display[380:480, x:x + 100], "COMMIT", self.c.calibrated)
 
     def y(self, i):
         """Set up right-size images"""
@@ -299,23 +306,22 @@ class OpenCVCalibrationNode(CalibrationNode):
         width = drawable.scrib.shape[1]
 
         display = numpy.zeros((max(480, height), width + 100, 3), dtype=numpy.uint8)
-        display[0:height, 0:width,:] = drawable.scrib
-        display[0:height, width:width+100,:].fill(255)
-
+        display[0:height, 0:width, :] = drawable.scrib
+        display[0:height, width:width + 100, :].fill(255)
 
         self.buttons(display)
         if not self.c.calibrated:
             if drawable.params:
-                 for i, (label, lo, hi, progress) in enumerate(drawable.params):
-                    (w,_) = self.getTextSize(label)
+                for i, (label, lo, hi, progress) in enumerate(drawable.params):
+                    (w, _) = self.getTextSize(label)
                     self.putText(display, label, (width + (100 - w) // 2, self.y(i)))
-                    color = (0,255,0)
+                    color = (0, 255, 0)
                     if progress < 1.0:
-                        color = (0, int(progress*255.), 255)
+                        color = (0, int(progress * 255.), 255)
                     cv2.line(display,
-                            (int(width + lo * 100), self.y(i) + 20),
-                            (int(width + hi * 100), self.y(i) + 20),
-                            color, 4)
+                             (int(width + lo * 100), self.y(i) + 20),
+                             (int(width + hi * 100), self.y(i) + 20),
+                             color, 4)
 
         else:
             self.putText(display, "lin.", (width, self.y(0)))
@@ -324,7 +330,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 msg = "?"
             else:
                 msg = "%.2f" % linerror
-                #print "linear", linerror
+                # print "linear", linerror
             self.putText(display, msg, (width, self.y(1)))
 
         self.queue_display.append(display)
@@ -334,24 +340,24 @@ class OpenCVCalibrationNode(CalibrationNode):
         width = drawable.lscrib.shape[1]
 
         display = numpy.zeros((max(480, height), 2 * width + 100, 3), dtype=numpy.uint8)
-        display[0:height, 0:width,:] = drawable.lscrib
-        display[0:height, width:2*width,:] = drawable.rscrib
-        display[0:height, 2*width:2*width+100,:].fill(255)
+        display[0:height, 0:width, :] = drawable.lscrib
+        display[0:height, width:2 * width, :] = drawable.rscrib
+        display[0:height, 2 * width:2 * width + 100, :].fill(255)
 
         self.buttons(display)
 
         if not self.c.calibrated:
             if drawable.params:
                 for i, (label, lo, hi, progress) in enumerate(drawable.params):
-                    (w,_) = self.getTextSize(label)
+                    (w, _) = self.getTextSize(label)
                     self.putText(display, label, (2 * width + (100 - w) // 2, self.y(i)))
-                    color = (0,255,0)
+                    color = (0, 255, 0)
                     if progress < 1.0:
-                        color = (0, int(progress*255.), 255)
+                        color = (0, int(progress * 255.), 255)
                     cv2.line(display,
-                            (int(2 * width + lo * 100), self.y(i) + 20),
-                            (int(2 * width + hi * 100), self.y(i) + 20),
-                            color, 4)
+                             (int(2 * width + lo * 100), self.y(i) + 20),
+                             (int(2 * width + hi * 100), self.y(i) + 20),
+                             color, 4)
 
         else:
             self.putText(display, "epi.", (2 * width, self.y(0)))
@@ -366,3 +372,114 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.putText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)))
 
         self.queue_display.append(display)
+
+
+class TarCalibrationNode():
+    def __init__(self, boards, service_check=True, synchronizer=message_filters.TimeSynchronizer, flags=0,
+                 pattern=Patterns.Chessboard, camera_name='', save_path="/tmp", scale_factor=1.0, checkerboard_flags=0):
+        super().__init__()
+
+        self._boards = boards
+        self._calib_flags = flags
+        self._checkerboard_flags = checkerboard_flags
+        self._pattern = pattern
+        self._camera_name = camera_name
+        self._save_path = save_path
+        self.scale_factor = scale_factor
+
+        self.c = None
+
+    def calibrate_from_tar(self, tar_file_path):
+        if self.c == None:
+            if self._camera_name:
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
+                                        checkerboard_flags=self._checkerboard_flags, save_path=self._save_path,
+                                        scale_factor=self.scale_factor)
+            else:
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
+                                        checkerboard_flags=self._checkerboard_flags, save_path=self._save_path,
+                                        scale_factor=self.scale_factor)
+
+        self.c.do_tarfile_calibration(tar_file_path)
+        if self.c.calibrated:
+            self.c.do_save()
+
+    def redraw_stereo(self, *args):
+        pass
+
+    def redraw_monocular(self, *args):
+        pass
+
+    def queue_monocular(self, msg):
+        self.q_mono.append(msg)
+
+    def queue_stereo(self, lmsg, rmsg):
+        self.q_stereo.append((lmsg, rmsg))
+
+    def handle_monocular(self, msg):
+        if self.c == None:
+            if self._camera_name:
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
+                                        checkerboard_flags=self._checkerboard_flags, save_path=self._save_path,
+                                        scale_factor=self.scale_factor)
+            else:
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
+                                        checkerboard_flags=self.checkerboard_flags, save_path=self._save_path,
+                                        scale_factor=self.scale_factor)
+
+        # This should just call the MonoCalibrator
+        drawable = self.c.handle_msg(msg)
+        self.displaywidth = drawable.scrib.shape[1]
+        self.redraw_monocular(drawable)
+
+    def handle_stereo(self, msg):
+        if self.c == None:
+            if self._camera_name:
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
+                                          checkerboard_flags=self._checkerboard_flags)
+            else:
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern,
+                                          checkerboard_flags=self._checkerboard_flags)
+
+        drawable = self.c.handle_msg(msg)
+        self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
+        self.redraw_stereo(drawable)
+
+    def check_set_camera_info(self, response):
+        if response.done():
+            if response.result() is not None:
+                if response.result().success:
+                    return True
+
+        for i in range(10):
+            print("!" * 80)
+        print()
+        print(
+            "Attempt to set camera info failed: " + response.result() if response.result() is not None else "Not available")
+        print()
+        for i in range(10):
+            print("!" * 80)
+        print()
+        self.get_logger().error(
+            'Unable to set camera info for calibration. Failure message: %s' % response.result() if response.result() is not None else "Not available")
+        return False
+
+    def do_upload(self):
+        self.c.report()
+        print(self.c.ost())
+        info = self.c.as_message()
+
+        req = sensor_msgs.srv.SetCameraInfo.Request()
+        rv = True
+        if self.c.is_mono:
+            req.camera_info = info
+            response = self.set_camera_info_service.call_async(req)
+            rv = self.check_set_camera_info(response)
+        else:
+            req.camera_info = info[0]
+            response = self.set_left_camera_info_service.call_async(req)
+            rv = rv and self.check_set_camera_info(response)
+            req.camera_info = info[1]
+            response = self.set_right_camera_info_service.call_async(req)
+            rv = rv and self.check_set_camera_info(response)
+        return rv
