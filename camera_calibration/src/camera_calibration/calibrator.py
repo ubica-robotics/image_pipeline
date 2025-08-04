@@ -39,6 +39,7 @@ import cv_bridge
 import image_geometry
 import math
 import numpy.linalg
+import numpy
 import pickle
 import random
 import sensor_msgs.msg
@@ -797,6 +798,35 @@ class MonoCalibrator(Calibrator):
         else:
             return None
 
+
+    def decompress(self, msg):
+        """
+        Function to decompress the data if the compressed image topic is give for calibration
+        :param msg: Image msg
+        :return: uncomressed image
+        """
+        if isinstance(msg, sensor_msgs.msg.CompressedImage):
+            np_arr = numpy.frombuffer(msg.data, dtype=numpy.uint8)
+            cv_image = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED)
+            # Infer from image shape
+            if len(cv_image.shape) == 2:
+                # cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+                out_encoding = "mono8"
+            elif cv_image.shape[2] == 3:
+                out_encoding = "bgr8"
+            elif cv_image.shape[2] == 4:
+                out_encoding = "bgra8"
+            else:
+                raise ValueError(f"Unexpected number of channels: {cv_image.shape[2]}")
+
+            decoded_msg = self.br.cv2_to_imgmsg(
+                cv_image,
+                encoding=out_encoding)
+            decoded_msg.header = msg.header
+            return decoded_msg
+        else:
+            return msg
+
     def handle_msg(self, msg):
         """
         Detects the calibration target and, if found and provides enough new information,
@@ -804,7 +834,7 @@ class MonoCalibrator(Calibrator):
 
         Returns a MonoDrawable message with the display image and progress info.
         """
-        gray = self.mkgray(msg)
+        gray = self.mkgray(self.decompress(msg))
         linear_error = -1
 
         # Get display-image-to-be (scrib) and detection of the calibration target
@@ -1108,11 +1138,39 @@ class StereoCalibrator(Calibrator):
                 [l2(pt3d[c + 0], pt3d[c + (cc * (cr - 1))]) / (cr - 1) for c in range(cc)])
         return sum(lengths) / len(lengths)
 
+    def decompress(self, msg):
+        """
+        Function to decompress the data if the compressed image topic is give for calibration
+        :param msg: Image msg
+        :return: uncomressed image
+        """
+        if isinstance(msg, sensor_msgs.msg.CompressedImage):
+            np_arr = numpy.frombuffer(msg.data, dtype=numpy.uint8)
+            cv_image = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED)
+            # Infer from image shape
+            if len(cv_image.shape) == 2:
+                # cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+                out_encoding = "mono8"
+            elif cv_image.shape[2] == 3:
+                out_encoding = "bgr8"
+            elif cv_image.shape[2] == 4:
+                out_encoding = "bgra8"
+            else:
+                raise ValueError(f"Unexpected number of channels: {cv_image.shape[2]}")
+
+            decoded_msg = self.br.cv2_to_imgmsg(
+                cv_image,
+                encoding=out_encoding)
+            decoded_msg.header = msg.header
+            return decoded_msg
+        else:
+            return msg
+        
     def handle_msg(self, msg):
         # TODO Various asserts that images have same dimension, same board detected...
         (lmsg, rmsg) = msg
-        lgray = self.mkgray(lmsg)
-        rgray = self.mkgray(rmsg)
+        lgray = self.mkgray(self.decompress(lmsg))
+        rgray = self.mkgray(self.decompress(rmsg))
         epierror = -1
 
         # Get display-images-to-be and detections of the calibration target

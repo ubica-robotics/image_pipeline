@@ -78,7 +78,8 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode(Node):
     def __init__(self, name, boards, service_check=True, synchronizer=message_filters.TimeSynchronizer, flags=0,
-                 pattern=Patterns.Chessboard, camera_name='', save_path="/tmp", scale_factor=1.0, checkerboard_flags=0):
+                 pattern=Patterns.Chessboard, camera_name='', save_path="/tmp", scale_factor=1.0, checkerboard_flags=0,
+                 compressed=True):
         super().__init__(name)
 
         self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
@@ -111,13 +112,22 @@ class CalibrationNode(Node):
         self._camera_name = camera_name
         self._save_path = save_path
         self.scale_factor = scale_factor
-        print("SAVE PATH: ", self._save_path)
-        lsub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'left')
-        rsub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'right')
+        self._compressed = compressed
+
+        # Check if compressed image is used
+        if self._compressed:
+            self._img_type = sensor_msgs.msg.CompressedImage
+        else:
+            self._img_type = sensor_msgs.msg.Image
+
+        # lsub = message_filters.Subscriber('left', self._img_type)
+        # rsub = message_filters.Subscriber('right', self._img_type)
+        lsub = message_filters.Subscriber(self, self._img_type, 'left')
+        rsub = message_filters.Subscriber(self, self._img_type, 'right')
         ts = synchronizer([lsub, rsub], 4)
         ts.registerCallback(self.queue_stereo)
 
-        msub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'image')
+        msub = message_filters.Subscriber(self, self._img_type, 'image')
         msub.registerCallback(self.queue_monocular)
 
         self.q_mono = deque([], 1)

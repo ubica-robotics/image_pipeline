@@ -49,6 +49,9 @@ def main():
     parser.add_option("-c", "--camera_name",
                       type="string", default='narrow_stereo',
                       help="name of the camera to appear in the calibration file")
+    parser.add_option("--compressed",
+                      action="store_true", default=False,
+                      help="Flag needed for compressed images")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -154,7 +157,7 @@ def main():
     if not options.tar_calibration:
         node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern,
                                      options.camera_name, options.save_path, options.scale_factor,
-                                     checkerboard_flags=checkerboard_flags)
+                                     checkerboard_flags=checkerboard_flags, compressed=options.compressed)
         node.spin()
     else:
         if not os.path.exists(options.tar_file_path):
